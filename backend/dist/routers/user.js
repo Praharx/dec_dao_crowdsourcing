@@ -32,6 +32,49 @@ const s3Client = new client_s3_1.S3Client({
     },
     region: "eu-north-1"
 });
+router.get("/task", middlewares_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore
+    const taskId = req.query.taskId;
+    //@ts-ignore
+    const userId = req.userId;
+    const taskDetails = yield prisma.task.findFirst({
+        where: {
+            id: Number(taskId),
+            user_id: userId
+        },
+        include: {
+            options: true
+        }
+    });
+    if (!taskDetails) {
+        return res.status(411).json({
+            msg: "The given task_id doesn't exist on the user_id."
+        });
+    }
+    const responses = yield prisma.submission.findMany({
+        where: {
+            task_id: Number(taskId)
+        },
+        include: {
+            option: true
+        }
+    });
+    const result = {};
+    taskDetails.options.forEach(option => {
+        result[option.id] = {
+            count: 1,
+            option: {
+                imageUrl: option.image_url
+            }
+        };
+    });
+    responses.forEach(r => {
+        result[r.option_id].count++;
+    });
+    res.json({
+        result
+    });
+}));
 router.get("/preSignedUrl", middlewares_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //@ts-ignore
     const userId = req.userId;
@@ -76,6 +119,7 @@ router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function*
     //         userId: user.id
     //     },JWT_SEC);
     //     res.json({token})
+    // }})
     ////////// WAY - 2
     const user = yield prisma.user.upsert({
         where: {

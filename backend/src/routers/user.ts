@@ -21,6 +21,62 @@ const s3Client = new S3Client(
         region: "eu-north-1"
     });
 
+router.get("/task", authMiddleware, async(req,res)=>{
+    //@ts-ignore
+    const taskId: string = req.query.taskId;
+    //@ts-ignore
+    const userId = req.userId;
+
+    const taskDetails = await prisma.task.findFirst({
+        where:{
+            id:Number(taskId),
+            user_id: userId
+        },
+        include:{
+            options:true
+        }
+    })
+
+    if(!taskDetails){
+        return res.status(411).json({
+            msg:"The given task_id doesn't exist on the user_id."
+        })
+    }
+
+    const responses = await prisma.submission.findMany({
+        where:{
+            task_id: Number(taskId)
+        },
+        include:{
+            option:true
+        }
+    })
+
+    const result: Record<string,{
+        count:number,
+        option: {
+            imageUrl: string
+        }}> = {};
+
+    taskDetails.options.forEach(option => {
+        result[option.id] = {
+            count: 1,
+            option: {
+                imageUrl: option.image_url
+            }
+        }
+    })
+    
+    responses.forEach(r => {
+        result[r.option_id].count++;
+    })
+
+    res.json({
+        result
+    })
+
+})
+
 router.get("/preSignedUrl", authMiddleware, async (req, res) => {
     //@ts-ignore
     const userId = req.userId;
@@ -71,6 +127,7 @@ router.post("/signin", async (req, res) => {
     //         userId: user.id
     //     },JWT_SEC);
     //     res.json({token})
+    // }})
 
     ////////// WAY - 2
     const user = await prisma.user.upsert({
@@ -129,8 +186,6 @@ router.post("/task", authMiddleware,async (req,res)=>{
     res.json({
         id: response.id
     })
-
-
-})
+});
 
 export default router;
