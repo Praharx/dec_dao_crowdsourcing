@@ -4,12 +4,14 @@ import jwt from "jsonwebtoken";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import authMiddleware from "../middlewares";
+import { createTaskInput } from "../types";
 
 const prisma = new PrismaClient();
 const router = Router();
 const JWT_SEC = process.env.JWT_SEC as string;
 const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID as string;
 const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD as string;
+const DEFAULT_TITLE = "Select the most clickable thumbnail."
 const s3Client = new S3Client(
     {
         credentials: {
@@ -86,6 +88,48 @@ router.post("/signin", async (req, res) => {
     }, JWT_SEC);
 
     res.json({ token });
+
+})
+
+router.post("/task", authMiddleware,async (req,res)=>{
+    const body = req.body;
+    //@ts-ignore
+    const user_id = req.userId;
+
+    const parsedData = createTaskInput.safeParse(body);
+
+    if(!parsedData.success) {
+        return res.status(411).json({
+            msg: "Incorrect data type please check"
+        })
+    }
+
+    // parsing the signature over here to verfiy the amount paid.
+
+    let response = await prisma.$transaction(async tx =>{
+        const response = await tx.task.create({
+            data:{
+                title: parsedData.data.title ?? DEFAULT_TITLE,
+                amount: "1 ",// SOL,
+                signature: parsedData.data.signature,
+                user_id: user_id
+            }
+        });
+
+        await tx.option.createMany({
+            data: parsedData.data.options.map(x => ({
+                image_url: x.imageUrl,
+                task_id: response.id
+            }))
+        })
+
+        return response;
+    })
+
+    res.json({
+        id: response.id
+    })
+
 
 })
 
