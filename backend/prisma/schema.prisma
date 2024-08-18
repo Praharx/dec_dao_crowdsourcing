@@ -56,4 +56,5 @@ model Submission {
   task_id   Int
   task      Task   @relation(fields: [task_id], references: [id])
   amount    String // since it's a small amount
+  @@unique([worker_id,task_id])
 }
