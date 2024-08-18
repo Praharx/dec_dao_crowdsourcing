@@ -10,7 +10,6 @@ CREATE TABLE "User" (
 CREATE TABLE "Task" (
     "id" SERIAL NOT NULL,
     "title" TEXT NOT NULL DEFAULT 'Select the most clickable thumbnail',
-    "image_url" TEXT NOT NULL,
     "user_id" INTEGER NOT NULL,
     "signature" TEXT NOT NULL,
     "amount" TEXT NOT NULL,
@@ -21,7 +20,7 @@ CREATE TABLE "Task" (
 -- CreateTable
 CREATE TABLE "Option" (
     "id" SERIAL NOT NULL,
-    "option_id" INTEGER NOT NULL,
+    "image_url" TEXT NOT NULL,
     "task_id" INTEGER NOT NULL,
 
     CONSTRAINT "Option_pkey" PRIMARY KEY ("id")
@@ -31,7 +30,6 @@ CREATE TABLE "Option" (
 CREATE TABLE "Worker" (
     "id" SERIAL NOT NULL,
     "address" TEXT NOT NULL,
-    "balance_id" INTEGER NOT NULL,
     "pending_amount" INTEGER NOT NULL,
     "locked_amount" INTEGER NOT NULL,
 

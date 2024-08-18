@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
-import authMiddleware from "../middlewares";
+import {authMiddleware} from "../middlewares";
 import { createTaskInput } from "../types";
 
 const prisma = new PrismaClient();
