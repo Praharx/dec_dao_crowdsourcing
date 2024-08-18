@@ -15,9 +15,75 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const client_s3_1 = require("@aws-sdk/client-s3");
+const s3_presigned_post_1 = require("@aws-sdk/s3-presigned-post");
+const middlewares_1 = __importDefault(require("../middlewares"));
 const prisma = new client_1.PrismaClient();
 const router = (0, express_1.Router)();
-const JWT_SEC = "hasu123";
+const JWT_SEC = process.env.JWT_SEC;
+const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID;
+const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD;
+const s3Client = new client_s3_1.S3Client({
+    credentials: {
+        accessKeyId: ACCESS_KEY_ID,
+        secretAccessKey: ACCESS_KEY_PASSWORD,
+    },
+    region: "eu-north-1"
+});
+// router.get("/preSignedUrl", authMiddleware, async (req, res) => {
+//     //@ts-ignore
+//     const userId = req.userId;
+//     const { url, fields } = await createPresignedPost(s3Client, {
+//         Bucket: 'decentralised-dao-labour',
+//         Key: `/uploads/${userId}/${Math.random()}/image.jpg`,
+//         Conditions: [
+//             ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
+//         ],
+//         Fields: {
+//             'Content-Type': 'image/jpg'
+//         }, 
+//         Expires: 3600
+//     })
+//     console.log(url,fields);
+//     res.json({
+//         preSignedUrl : url,
+//         fields
+//     })
+// })
+router.get("/preSignedUrl", middlewares_1.default, (req, res) => {
+    //@ts-ignore
+    const userId = req.userId;
+    new Promise((resolve, reject) => {
+        (0, s3_presigned_post_1.createPresignedPost)(s3Client, {
+            Bucket: 'decentralised-dao-labour',
+            Key: `/uploads/${userId}/${Math.random()}/image.jpg`,
+            Conditions: [
+                ['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
+            ],
+            Fields: {
+                'Content-Type': 'image/jpg'
+            },
+            Expires: 3600
+        })
+            .then(({ url, fields }) => {
+            console.log(url, fields);
+            resolve({ url, fields });
+        })
+            .catch(error => {
+            reject(error);
+        });
+    })
+        .then(({ url, fields }) => {
+        res.json({
+            preSignedUrl: url,
+            fields
+        });
+    })
+        .catch(error => {
+        console.error("Error creating presigned URL:", error);
+        res.status(500).json({ error: "Failed to create presigned URL" });
+    });
+});
 router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const hardcodedWalletAddress = "8BE2bhzokoZmuKscpNbAKGxHAQL5xSEhKnSHjgwpuowY";
     const hardcodedAddress2 = "Iamsfortrialpurposesonly";
