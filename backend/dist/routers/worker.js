@@ -24,6 +24,51 @@ const JWT_SEC_WORKER = process.env.JWT_SEC_WORKER;
 const MAX_SUBMISSIONS = 100;
 const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
 console.log(TOTAL_DECIMALS);
+router.post("/payout", middlewares_1.WorkerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore
+    const userId = req.userId;
+    console.log(":::::::::", userId);
+    const worker = yield prisma.worker.findFirst({
+        where: {
+            id: Number(userId)
+        }
+    });
+    if (!worker) {
+        return res.status(403).json({
+            msg: "User not found"
+        });
+    }
+    const address = worker.address;
+    const txnId = "44556567682";
+    yield prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        yield tx.worker.update({
+            where: {
+                id: Number(userId)
+            },
+            data: {
+                pending_amount: {
+                    decrement: worker.pending_amount
+                },
+                locked_amount: {
+                    increment: worker.locked_amount
+                }
+            }
+        });
+        yield tx.payouts.create({
+            data: {
+                user_id: Number(userId),
+                amount: worker.pending_amount,
+                signature: txnId,
+                status: "Processing"
+            }
+        });
+        // send transaction to blockchain
+        res.json({
+            messages: "Payouts are processing",
+            amount: worker.pending_amount
+        });
+    }));
+}));
 router.get("/balance", middlewares_1.WorkerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //@ts-ignore
     const userId = req.userId;

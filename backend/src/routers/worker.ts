@@ -12,13 +12,54 @@ const MAX_SUBMISSIONS = 100;
 const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
 console.log(TOTAL_DECIMALS)
 
-router.post("/payout",async(req,res)=>{
+router.post("/payout", WorkerMiddleware, async(req,res)=>{
     //@ts-ignore
     const userId:string = req.userId;
     const worker = await prisma.worker.findFirst({
         where:{
             id:Number(userId)
         }
+    })
+
+    if(!worker){
+        return res.status(403).json({
+            msg:"User not found"
+        })
+    }
+
+    const address = worker.address;
+    const txnId = "44556567682";
+
+    await prisma.$transaction(async tx =>{
+        await tx.worker.update({
+            where:{
+                id: Number(userId)
+            },
+            data:{
+                pending_amount: {
+                    decrement: worker.pending_amount
+                },
+                locked_amount: {
+                    increment: worker.locked_amount
+                }
+            }
+        });
+
+        await tx.payouts.create({
+            data:{
+                user_id: Number(userId),
+                amount: worker.pending_amount,
+                signature: txnId,
+                status:"Processing"
+            }
+        })
+
+        // send transaction to blockchain
+
+        res.json({
+            messages:"Payouts are processing",
+            amount: worker.pending_amount
+        })
     })
 })
 
