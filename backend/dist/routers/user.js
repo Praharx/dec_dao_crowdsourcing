@@ -25,6 +25,7 @@ const JWT_SEC = process.env.JWT_SEC;
 const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID;
 const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD;
 const DEFAULT_TITLE = "Select the most clickable thumbnail.";
+const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
 const s3Client = new client_s3_1.S3Client({
     credentials: {
         accessKeyId: ACCESS_KEY_ID,
@@ -151,7 +152,7 @@ router.post("/task", middlewares_1.authMiddleware, (req, res) => __awaiter(void 
         const response = yield tx.task.create({
             data: {
                 title: (_a = parsedData.data.title) !== null && _a !== void 0 ? _a : DEFAULT_TITLE,
-                amount: "1 ", // SOL,
+                amount: 1 * Number(TOTAL_DECIMALS), // SOL,
                 signature: parsedData.data.signature,
                 user_id: user_id
             }

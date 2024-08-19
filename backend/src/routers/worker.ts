@@ -10,6 +10,17 @@ const prisma = new PrismaClient();
 const JWT_SEC_WORKER = process.env.JWT_SEC_WORKER as string;
 const MAX_SUBMISSIONS = 100;
 const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
+console.log(TOTAL_DECIMALS)
+
+router.post("/payout",async(req,res)=>{
+    //@ts-ignore
+    const userId:string = req.userId;
+    const worker = await prisma.worker.findFirst({
+        where:{
+            id:Number(userId)
+        }
+    })
+})
 
 router.get("/balance", WorkerMiddleware,async(req,res)=>{
     //@ts-ignore
@@ -42,9 +53,10 @@ router.post("/submission",WorkerMiddleware,async (req,res)=>{
         }
 
         const amount = task.amount/MAX_SUBMISSIONS;
+        console.log(":::::",amount);
 
         const submission = await prisma.$transaction(async tx => {
-            const submission = await prisma.submission.create({
+            const submission = await tx.submission.create({
                 data:{
                     option_id: Number(parsedBody.data?.selection),
                     task_id: Number(parsedBody.data?.task_id),
@@ -53,13 +65,13 @@ router.post("/submission",WorkerMiddleware,async (req,res)=>{
                 }
             });
 
-            await prisma.worker.update({
+            await tx.worker.update({
                 where:{
                     id: Number(userId)
                 },
                 data:{
                     pending_amount:{
-                        increment: amount * Number(TOTAL_DECIMALS)
+                        increment: amount 
                     }
                 }
             })

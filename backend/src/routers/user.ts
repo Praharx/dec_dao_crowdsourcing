@@ -168,11 +168,12 @@ router.post("/task", authMiddleware,async (req,res)=>{
         const response = await tx.task.create({
             data:{
                 title: parsedData.data.title ?? DEFAULT_TITLE,
-                amount: 1 * Number(TOTAL_DECIMALS),// SOL,
+                amount: 1 * Number(TOTAL_DECIMALS) ,// SOL,
                 signature: parsedData.data.signature,
                 user_id: user_id
             }
         });
+        
 
         await tx.option.createMany({
             data: parsedData.data.options.map(x => ({

@@ -22,9 +22,22 @@ const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 const JWT_SEC_WORKER = process.env.JWT_SEC_WORKER;
 const MAX_SUBMISSIONS = 100;
-const TOTAL_DECIMALS = 100000000;
+const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
+console.log(TOTAL_DECIMALS);
+router.get("/balance", middlewares_1.WorkerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore
+    const userId = req.userId;
+    const worker = yield prisma.worker.findFirst({
+        where: {
+            id: Number(userId)
+        }
+    });
+    res.json({
+        pendingAmount: worker === null || worker === void 0 ? void 0 : worker.pending_amount,
+        lockedAmount: worker === null || worker === void 0 ? void 0 : worker.locked_amount
+    });
+}));
 router.post("/submission", middlewares_1.WorkerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
     //@ts-ignore
     const userId = req.userId;
     const body = req.body;
@@ -36,15 +49,30 @@ router.post("/submission", middlewares_1.WorkerMiddleware, (req, res) => __await
                 msg: "Incorrect task Id please check"
             });
         }
-        const amount = (Number(task.amount) / MAX_SUBMISSIONS).toString();
-        const submission = yield prisma.submission.create({
-            data: {
-                option_id: Number((_a = parsedBody.data) === null || _a === void 0 ? void 0 : _a.selection),
-                task_id: Number((_b = parsedBody.data) === null || _b === void 0 ? void 0 : _b.task_id),
-                worker_id: Number(userId),
-                amount
-            }
-        });
+        const amount = task.amount / MAX_SUBMISSIONS;
+        console.log(":::::", amount);
+        const submission = yield prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b;
+            const submission = yield tx.submission.create({
+                data: {
+                    option_id: Number((_a = parsedBody.data) === null || _a === void 0 ? void 0 : _a.selection),
+                    task_id: Number((_b = parsedBody.data) === null || _b === void 0 ? void 0 : _b.task_id),
+                    worker_id: Number(userId),
+                    amount
+                }
+            });
+            yield tx.worker.update({
+                where: {
+                    id: Number(userId)
+                },
+                data: {
+                    pending_amount: {
+                        increment: amount
+                    }
+                }
+            });
+            return submission;
+        }));
         const nextTask = yield (0, db_1.getNextTask)(Number(userId));
         return res.json({
             nextTask,
