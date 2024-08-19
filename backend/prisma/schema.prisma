@@ -24,9 +24,9 @@ model Task {
   title       String       @default("Select the most clickable thumbnail")
   options     Option[]
   user_id     Int
-  done      Boolean         @default(false)
+  done        Boolean      @default(false)
   signature   String
-  amount      String
+  amount      Int
   user        User         @relation(fields: [user_id], references: [id])
   submissions Submission[]
 }
@@ -55,6 +55,7 @@ model Submission {
   option    Option @relation(fields: [option_id], references: [id])
   task_id   Int
   task      Task   @relation(fields: [task_id], references: [id])
-  amount    String // since it's a small amount
-  @@unique([worker_id,task_id])
+  amount    Int // since it's a small amount
+
+  @@unique([worker_id, task_id])
 }

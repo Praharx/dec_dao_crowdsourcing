@@ -9,10 +9,27 @@ const router = Router();
 const prisma = new PrismaClient();
 const JWT_SEC_WORKER = process.env.JWT_SEC_WORKER as string;
 const MAX_SUBMISSIONS = 100;
+const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
+
+router.get("/balance", WorkerMiddleware,async(req,res)=>{
+    //@ts-ignore
+    const userId:string = req.userId;
+
+    const worker = await prisma.worker.findFirst({
+        where:{
+            id: Number(userId)
+        }
+    })
+
+    res.json({
+        pendingAmount: worker?.pending_amount,
+        lockedAmount: worker?.locked_amount
+    });
+})
 
 router.post("/submission",WorkerMiddleware,async (req,res)=>{
     //@ts-ignore
-    const userId = req.userId;
+    const userId:string = req.userId;
     const body = req.body;
     const parsedBody = createSubmissionInput.safeParse(body);
 
@@ -23,15 +40,35 @@ router.post("/submission",WorkerMiddleware,async (req,res)=>{
                 msg:"Incorrect task Id please check"
             })
         }
-        let amount = (Number(task.amount)/MAX_SUBMISSIONS).toString();
-        const submission = await prisma.submission.create({
-            data:{
-                option_id: Number(parsedBody.data?.selection),
-                task_id: Number(parsedBody.data?.task_id),
-                worker_id: userId,
-                amount
-            }
-        });
+
+        const amount = task.amount/MAX_SUBMISSIONS;
+
+        const submission = await prisma.$transaction(async tx => {
+            const submission = await prisma.submission.create({
+                data:{
+                    option_id: Number(parsedBody.data?.selection),
+                    task_id: Number(parsedBody.data?.task_id),
+                    worker_id: Number(userId),
+                    amount
+                }
+            });
+
+            await prisma.worker.update({
+                where:{
+                    id: Number(userId)
+                },
+                data:{
+                    pending_amount:{
+                        increment: amount * Number(TOTAL_DECIMALS)
+                    }
+                }
+            })
+
+            return submission;
+        })
+            
+
+        
         const nextTask = await getNextTask(Number(userId));
         return res.json({
             nextTask,

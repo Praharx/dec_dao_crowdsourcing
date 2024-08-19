@@ -11,7 +11,8 @@ const router = Router();
 const JWT_SEC = process.env.JWT_SEC as string;
 const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID as string;
 const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD as string;
-const DEFAULT_TITLE = "Select the most clickable thumbnail."
+const DEFAULT_TITLE = "Select the most clickable thumbnail.";
+const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
 const s3Client = new S3Client(
     {
         credentials: {
@@ -167,7 +168,7 @@ router.post("/task", authMiddleware,async (req,res)=>{
         const response = await tx.task.create({
             data:{
                 title: parsedData.data.title ?? DEFAULT_TITLE,
-                amount: "1 ",// SOL,
+                amount: 1 * Number(TOTAL_DECIMALS),// SOL,
                 signature: parsedData.data.signature,
                 user_id: user_id
             }

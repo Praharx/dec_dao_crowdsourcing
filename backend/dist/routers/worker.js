@@ -22,6 +22,7 @@ const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 const JWT_SEC_WORKER = process.env.JWT_SEC_WORKER;
 const MAX_SUBMISSIONS = 100;
+const TOTAL_DECIMALS = 100000000;
 router.post("/submission", middlewares_1.WorkerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     //@ts-ignore
@@ -35,12 +36,12 @@ router.post("/submission", middlewares_1.WorkerMiddleware, (req, res) => __await
                 msg: "Incorrect task Id please check"
             });
         }
-        let amount = (Number(task.amount) / MAX_SUBMISSIONS).toString();
+        const amount = (Number(task.amount) / MAX_SUBMISSIONS).toString();
         const submission = yield prisma.submission.create({
             data: {
                 option_id: Number((_a = parsedBody.data) === null || _a === void 0 ? void 0 : _a.selection),
                 task_id: Number((_b = parsedBody.data) === null || _b === void 0 ? void 0 : _b.task_id),
-                worker_id: userId,
+                worker_id: Number(userId),
                 amount
             }
         });
