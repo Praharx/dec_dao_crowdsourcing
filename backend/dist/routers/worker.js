@@ -27,7 +27,6 @@ console.log(TOTAL_DECIMALS);
 router.post("/payout", middlewares_1.WorkerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //@ts-ignore
     const userId = req.userId;
-    console.log(":::::::::", userId);
     const worker = yield prisma.worker.findFirst({
         where: {
             id: Number(userId)
