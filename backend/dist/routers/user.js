@@ -73,7 +73,8 @@ router.get("/task", middlewares_1.authMiddleware, (req, res) => __awaiter(void 0
         result[r.option_id].count++;
     });
     res.json({
-        result
+        result,
+        taskDetails
     });
 }));
 router.get("/preSignedUrl", middlewares_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -140,6 +141,7 @@ router.post("/task", middlewares_1.authMiddleware, (req, res) => __awaiter(void 
     const body = req.body;
     //@ts-ignore
     const user_id = req.userId;
+    console.log("::::::::", user_id);
     const parsedData = types_1.createTaskInput.safeParse(body);
     if (!parsedData.success) {
         return res.status(411).json({
@@ -152,7 +154,7 @@ router.post("/task", middlewares_1.authMiddleware, (req, res) => __awaiter(void 
         const response = yield tx.task.create({
             data: {
                 title: (_a = parsedData.data.title) !== null && _a !== void 0 ? _a : DEFAULT_TITLE,
-                amount: 1 * Number(TOTAL_DECIMALS), // SOL,
+                amount: 1,
                 signature: parsedData.data.signature,
                 user_id: user_id
             }

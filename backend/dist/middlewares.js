@@ -17,6 +17,7 @@ function authMiddleware(req, res, next) {
         if (decoded.userId) {
             //@ts-ignore
             req.userId = decoded.userId;
+            console.log("middleware job done.");
             return next();
         }
         else {

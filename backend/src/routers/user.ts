@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import {authMiddleware} from "../middlewares";
 import { createTaskInput } from "../types";
@@ -73,7 +73,8 @@ router.get("/task", authMiddleware, async(req,res)=>{
     })
 
     res.json({
-        result
+        result,
+        taskDetails
     })
 
 })
@@ -153,6 +154,7 @@ router.post("/task", authMiddleware,async (req,res)=>{
     const body = req.body;
     //@ts-ignore
     const user_id = req.userId;
+    console.log("::::::::",user_id);
 
     const parsedData = createTaskInput.safeParse(body);
 
@@ -168,7 +170,7 @@ router.post("/task", authMiddleware,async (req,res)=>{
         const response = await tx.task.create({
             data:{
                 title: parsedData.data.title ?? DEFAULT_TITLE,
-                amount: 1 * Number(TOTAL_DECIMALS) ,// SOL,
+                amount: 1 ,
                 signature: parsedData.data.signature,
                 user_id: user_id
             }

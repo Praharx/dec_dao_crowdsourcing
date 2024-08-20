@@ -13,6 +13,7 @@ export function authMiddleware(req:Request,res:Response,next:NextFunction){
         if(decoded.userId){
             //@ts-ignore
             req.userId = decoded.userId;
+            console.log("middleware job done.")
             return next();
         } else{
             return res.status(403).json({
