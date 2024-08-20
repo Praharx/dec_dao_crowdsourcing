@@ -6,18 +6,20 @@ import axios from "axios";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
 
-const UploadImage = () => {
+interface UploadImageProps {
+    images: string[];
+    setImages: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+const UploadImage = ({images,setImages}:UploadImageProps) => {
     const [uploading, setUploading] = useState(false);
-    const [images,setImages] = useState<string[]>([
-       
-    ]);
 
     async function chooseFile(e: React.ChangeEvent<HTMLInputElement>) {
         setUploading(true);
 
         try 
         {
-            const response = await axios.get(`http://localhost:3000/v1/user/preSignedUrl`, {
+            const response = await axios.get(`${BACKEND_URL}/v1/user/preSignedUrl`, {
                 headers: {
                     Authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTcyNDExOTg3NH0.g0H_URzXL6MNid7eceNQsefCxleYcqzqqMnOi7D9J8E"
                 }
