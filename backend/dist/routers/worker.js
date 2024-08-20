@@ -132,7 +132,7 @@ router.get("/nextTask", middlewares_1.WorkerMiddleware, (req, res) => __awaiter(
         res.status(411).json({ msg: "No more tasks left for u to review." });
     }
     else {
-        res.status(400).json({
+        res.status(201).json({
             task
         });
     }
