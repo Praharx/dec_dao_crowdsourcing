@@ -4,10 +4,15 @@ import {useState} from "react";
 import UploadImage from "../components/uploadImage";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function AppComponent(){
+    const {connection} = useConnection();
+    const {publicKey,sendTransaction} = useWallet();
+    const [txSignature,setTxSignature] = useState("");
     const [title,setTitle] = useState("");
     const [images,setImages] = useState<string[]>([]);
     const router = useRouter();
@@ -32,6 +37,27 @@ export default function AppComponent(){
         };
         router.push(`/task/${response.data.id}`)
     }
+
+    async function makePayment(){
+        const transaction = new Transaction().add(
+            SystemProgram.transfer({
+                fromPubkey: publicKey!,
+                toPubkey: new PublicKey("8BE2bhzokoZmuKscpNbAKGxHAQL5xSEhKnSHjgwpuowY"),
+                lamports: 100000000
+            })
+        );
+
+        const {
+            context: {slot: minContextSlot},
+            value: {blockhash, lastValidBlockHeight}
+          } = await connection.getLatestBlockhashAndContext();
+
+        const signature = await sendTransaction(transaction, connection,{minContextSlot});
+
+        await connection.confirmTransaction({blockhash, lastValidBlockHeight, signature});
+        setTxSignature(signature);
+    }
+
     return <div className="flex flex-col pt-9 gap-2">
         <div className="mx-auto">
         <h1 className="text-[2rem]  font-mono">Confused about which YT video will perform better CTR wise?</h1>
@@ -59,6 +85,6 @@ export default function AppComponent(){
  
         <UploadImage images={images} setImages={setImages}/>
 
-        <button className="border border-white w-fit p-2 rounded-lg mx-auto mt-1 mb-10" onClick={handleSubmit}>Submit Task</button>
+        <button className="border border-white w-fit p-2 rounded-lg mx-auto mt-1 mb-10" onClick={txSignature?handleSubmit:makePayment}>{txSignature? "Submit Task":"Pay 0.1 SOL"}</button>
     </div>
 }
