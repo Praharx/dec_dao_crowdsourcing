@@ -27,6 +27,8 @@ const JWT_SEC = process.env.JWT_SEC;
 const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID;
 const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD;
 const DEFAULT_TITLE = "Select the most clickable thumbnail.";
+const PARENT_WALLET_ADDRESS = "8BE2bhzokoZmuKscpNbAKGxHAQL5xSEhKnSHjgwpuowY";
+const connection = new web3_js_1.Connection("https://solana-devnet.g.alchemy.com/v2/mSOKolKC5DWNK9KeMWIEoN9TxSNWspzy");
 const s3Client = new client_s3_1.S3Client({
     credentials: {
         accessKeyId: ACCESS_KEY_ID,
@@ -92,7 +94,6 @@ router.get("/preSignedUrl", middlewares_1.authMiddleware, (req, res) => __awaite
         },
         Expires: 3600
     });
-    console.log(url, fields);
     res.json({
         preSignedUrl: url,
         fields
@@ -100,14 +101,11 @@ router.get("/preSignedUrl", middlewares_1.authMiddleware, (req, res) => __awaite
 }));
 router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { signature, publicKey } = req.body;
-    console.log("req.body", req.body);
-    console.log("signature", signature, "::::");
     try {
         const sign = new Uint8Array(signature.data);
         console.log("Signature Length backend:", sign.length);
         const message = new TextEncoder().encode("You have signed-in to Crowd Source.");
         const result = tweetnacl_1.default.sign.detached.verify(message, sign, new web3_js_1.PublicKey(publicKey).toBytes());
-        console.log("result", result);
         if (!result) {
             return res.status(402).json({
                 msg: "no result received."
@@ -135,14 +133,29 @@ router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function*
     res.json({ token });
 }));
 router.post("/task", middlewares_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d, _e;
     const body = req.body;
     //@ts-ignore
     const user_id = req.userId;
-    console.log("::::::::", user_id);
     const parsedData = types_1.createTaskInput.safeParse(body);
     if (!parsedData.success) {
         return res.status(411).json({
             msg: "Incorrect data type please check"
+        });
+    }
+    console.log("signature", parsedData.data.signature);
+    const transaction = yield connection.getTransaction(parsedData.data.signature, {
+        maxSupportedTransactionVersion: 1
+    });
+    console.log(transaction);
+    if (((_b = (_a = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _a === void 0 ? void 0 : _a.postBalances[1]) !== null && _b !== void 0 ? _b : 0) - ((_d = (_c = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _c === void 0 ? void 0 : _c.preBalances[1]) !== null && _d !== void 0 ? _d : 0) !== 100000000) {
+        return res.status(411).json({
+            message: "Transaction signature/amount increment."
+        });
+    }
+    if (((_e = transaction === null || transaction === void 0 ? void 0 : transaction.transaction.message.getAccountKeys().get(1)) === null || _e === void 0 ? void 0 : _e.toString()) !== PARENT_WALLET_ADDRESS) {
+        return res.status(411).json({
+            message: "Transaction sent to wrong address."
         });
     }
     // parsing the signature over here to verfiy the amount paid.

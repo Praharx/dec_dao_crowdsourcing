@@ -6,7 +6,8 @@ import { S3Client } from "@aws-sdk/client-s3";
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import {authMiddleware} from "../middlewares";
 import { createTaskInput } from "../types";
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
+
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -14,6 +15,8 @@ const JWT_SEC = process.env.JWT_SEC as string;
 const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID as string;
 const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD as string;
 const DEFAULT_TITLE = "Select the most clickable thumbnail.";
+const PARENT_WALLET_ADDRESS = "8BE2bhzokoZmuKscpNbAKGxHAQL5xSEhKnSHjgwpuowY";
+const connection = new Connection("https://solana-devnet.g.alchemy.com/v2/mSOKolKC5DWNK9KeMWIEoN9TxSNWspzy");
 const s3Client = new S3Client(
     {
         credentials: {
@@ -96,8 +99,6 @@ router.get("/preSignedUrl", authMiddleware, async (req, res) => {
         Expires: 3600
     })
 
-    console.log(url,fields);
-
     res.json({
         preSignedUrl : url,
         fields
@@ -107,9 +108,7 @@ router.get("/preSignedUrl", authMiddleware, async (req, res) => {
 
 router.post("/signin", async (req, res) => {
     const {signature, publicKey} = req.body;
-    console.log("req.body",req.body);
-    console.log("signature",signature,"::::");
-    
+  
     try{
         
         const sign = new Uint8Array(signature.data);
@@ -123,7 +122,7 @@ router.post("/signin", async (req, res) => {
 
     
     );
-    console.log("result",result);
+  
     if (!result) {
         return res.status(402).json({
             msg:"no result received."
@@ -161,7 +160,6 @@ router.post("/task", authMiddleware,async (req,res)=>{
     const body = req.body;
     //@ts-ignore
     const user_id = req.userId;
-    console.log("::::::::",user_id);
 
     const parsedData = createTaskInput.safeParse(body);
 
@@ -170,6 +168,26 @@ router.post("/task", authMiddleware,async (req,res)=>{
             msg: "Incorrect data type please check"
         })
     }
+
+    console.log("signature",parsedData.data.signature);
+    // VERIFICATION IS YET NOT DONE
+    // const transaction = await connection.getTransaction(parsedData.data.signature,{
+    //     maxSupportedTransactionVersion: 1
+    // })
+
+    // console.log(transaction);
+
+    // if((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000 ){
+    //     return res.status(411).json({
+    //         message:"Transaction signature/amount increment."
+    //     })
+    // }
+
+    // if(transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS){
+    //     return res.status(411).json({
+    //         message:"Transaction sent to wrong address."
+    //     })
+    // }
 
     // parsing the signature over here to verfiy the amount paid.
 
