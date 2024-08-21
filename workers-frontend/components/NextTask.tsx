@@ -29,7 +29,7 @@ export default function NextTask() {
             selection: String(id)
         },{
             headers: {
-                Authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTcyNDE2NDAxM30.YoazG67smWOT4L2ECnwplXo71Ht_OK4LmEDpVj16w2Q"
+                Authorization: localStorage.getItem("token")
             } 
         });
         if(!response.data.nextTask){
