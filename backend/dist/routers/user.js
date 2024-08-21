@@ -14,18 +14,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
+const tweetnacl_1 = __importDefault(require("tweetnacl"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_s3_1 = require("@aws-sdk/client-s3");
 const s3_presigned_post_1 = require("@aws-sdk/s3-presigned-post");
 const middlewares_1 = require("../middlewares");
 const types_1 = require("../types");
+const web3_js_1 = require("@solana/web3.js");
 const prisma = new client_1.PrismaClient();
 const router = (0, express_1.Router)();
 const JWT_SEC = process.env.JWT_SEC;
 const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID;
 const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD;
 const DEFAULT_TITLE = "Select the most clickable thumbnail.";
-const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
 const s3Client = new client_s3_1.S3Client({
     credentials: {
         accessKeyId: ACCESS_KEY_ID,
@@ -98,38 +99,34 @@ router.get("/preSignedUrl", middlewares_1.authMiddleware, (req, res) => __awaite
     });
 }));
 router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const hardcodedWalletAddress = "8BE2bhzokoZmuKscpNbAKGxHAQL5xSEhKnSHjgwpuowY";
-    const hardcodedAddress2 = "Iamsfortrialpurposesonly";
-    ////////// WAY - 1
-    // const existingUser = await prisma.user.findFirst({
-    //     where:{
-    //         address:hardcodedWalletAddress,
-    //     }
-    // })
-    // if(existingUser) {
-    //     const token = jwt.sign({
-    //         userId: existingUser.id
-    //     },JWT_SEC);
-    //     res.json({token})
-    // }else {
-    //     const user = await prisma.user.create({
-    //         data: {
-    //             address: hardcodedWalletAddress
-    //         }
-    //     })
-    //     const token = jwt.sign({
-    //         userId: user.id
-    //     },JWT_SEC);
-    //     res.json({token})
-    // }})
-    ////////// WAY - 2
+    const { signature, publicKey } = req.body;
+    console.log("req.body", req.body);
+    console.log("signature", signature, "::::");
+    try {
+        const sign = new Uint8Array(signature.data);
+        console.log("Signature Length backend:", sign.length);
+        const message = new TextEncoder().encode("You have signed-in to Crowd Source.");
+        const result = tweetnacl_1.default.sign.detached.verify(message, sign, new web3_js_1.PublicKey(publicKey).toBytes());
+        console.log("result", result);
+        if (!result) {
+            return res.status(402).json({
+                msg: "no result received."
+            });
+        }
+    }
+    catch (e) {
+        console.log(e);
+        return res.status(400).json({
+            msg: "internal server error"
+        });
+    }
     const user = yield prisma.user.upsert({
         where: {
-            address: hardcodedAddress2
+            address: publicKey
         },
         update: {}, // if you dont have anything to update, u can keep it blank.
         create: {
-            address: hardcodedAddress2,
+            address: publicKey,
         },
     });
     const token = jsonwebtoken_1.default.sign({

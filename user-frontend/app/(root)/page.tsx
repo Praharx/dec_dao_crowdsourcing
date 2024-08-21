@@ -1,5 +1,5 @@
-import AppComponent from "@/components/AppComponent";
-import Appbar from "../../components/Appbar";
+import AppComponent from "../components/AppComponent";
+import Appbar from "../components/Appbar";
 
 
 export default function Home() {

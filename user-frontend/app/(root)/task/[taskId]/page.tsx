@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import Appbar from "@/components/Appbar";
+import Appbar from "../../../components/Appbar";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 

@@ -16,6 +16,8 @@ export default function Appbar() {
     const {publicKey,signMessage} = useWallet();
 
     async function signAndSend() {
+        if (!publicKey || !signMessage) return;
+
         const message = new TextEncoder().encode("You have signed-in to Crowd Source.");
         const signature = await signMessage?.(message);
         console.log("Signature Length frontend:", signature?.length);
@@ -30,8 +32,9 @@ export default function Appbar() {
     }
 
     useEffect(()=>{
-        signAndSend()
-    },[publicKey]);
+        if(publicKey){
+            signAndSend()
+    }},[publicKey]);
     return (
         <div className="flex min-h-screenflex-col items-center justify-between p-4 border-gray-600 border-b-[0.2px]">
             <div>

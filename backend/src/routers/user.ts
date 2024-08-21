@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
+import nacl from "tweetnacl";
 import jwt from "jsonwebtoken";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
 import {authMiddleware} from "../middlewares";
 import { createTaskInput } from "../types";
+import { PublicKey } from "@solana/web3.js";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -12,7 +14,6 @@ const JWT_SEC = process.env.JWT_SEC as string;
 const ACCESS_KEY_ID = process.env.ACCESS_KEY_ID as string;
 const ACCESS_KEY_PASSWORD = process.env.ACCESS_KEY_PASSWORD as string;
 const DEFAULT_TITLE = "Select the most clickable thumbnail.";
-const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS;
 const s3Client = new S3Client(
     {
         credentials: {
@@ -105,40 +106,46 @@ router.get("/preSignedUrl", authMiddleware, async (req, res) => {
 
 
 router.post("/signin", async (req, res) => {
-    const hardcodedWalletAddress = "8BE2bhzokoZmuKscpNbAKGxHAQL5xSEhKnSHjgwpuowY";
-    const hardcodedAddress2 = "Iamsfortrialpurposesonly";
-    ////////// WAY - 1
-    // const existingUser = await prisma.user.findFirst({
-    //     where:{
-    //         address:hardcodedWalletAddress,
-    //     }
-    // })
-    // if(existingUser) {
-    //     const token = jwt.sign({
-    //         userId: existingUser.id
-    //     },JWT_SEC);
+    const {signature, publicKey} = req.body;
+    console.log("req.body",req.body);
+    console.log("signature",signature,"::::");
+    
+    try{
+        
+        const sign = new Uint8Array(signature.data);
+        console.log("Signature Length backend:", sign.length);
+        const message = new TextEncoder().encode("You have signed-in to Crowd Source.");
 
-    //     res.json({token})
-    // }else {
-    //     const user = await prisma.user.create({
-    //         data: {
-    //             address: hardcodedWalletAddress
-    //         }
-    //     })
-    //     const token = jwt.sign({
-    //         userId: user.id
-    //     },JWT_SEC);
-    //     res.json({token})
-    // }})
+    const result = nacl.sign.detached.verify(
+        message,
+        sign,
+        new PublicKey(publicKey).toBytes(),
 
-    ////////// WAY - 2
+    
+    );
+    console.log("result",result);
+    if (!result) {
+        return res.status(402).json({
+            msg:"no result received."
+        })
+    }
+    } catch(e) {
+        console.log(e);
+        return res.status(400).json({
+            msg: "internal server error"
+        })
+    }
+
+
+    
+
     const user = await prisma.user.upsert({
         where: {
-            address: hardcodedAddress2
+            address:publicKey
         },
         update: {}, // if you dont have anything to update, u can keep it blank.
         create: {
-            address: hardcodedAddress2,
+            address: publicKey,
         },
     });
 

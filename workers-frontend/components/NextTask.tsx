@@ -22,7 +22,8 @@ export default function NextTask() {
     const [loading, setLoading] = useState(false);
 
     async function onSelect(id:number){
-        setLoading(true);
+        try{
+            setLoading(true);
         const response = await axios.post(`http://localhost:3000/v1/worker/submission`,{
             task_id: String(taskDetails?.id),
             selection: String(id)
@@ -36,17 +37,24 @@ export default function NextTask() {
         }
         setTaskDetails(response.data.nextTask);
         setLoading(false);
+        }catch(e){
+            console.log(e);
+        }
     }
 
     async function fetchDetails() {
-        setLoading(true);
-        const response = await axios.get(`${BACKEND_URL}/nextTask`, {
-            headers: {
-                Authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTcyNDE2NDAxM30.YoazG67smWOT4L2ECnwplXo71Ht_OK4LmEDpVj16w2Q"
-            }
-        });
-        setLoading(false);
-        return response.data;
+        try{
+            const response = await axios.get(`${BACKEND_URL}/nextTask`, {
+                headers: {
+                    Authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTcyNDE2NDAxM30.YoazG67smWOT4L2ECnwplXo71Ht_OK4LmEDpVj16w2Q"
+                }
+                
+            });
+            return response.data;
+        } catch(e){
+            console.log(e);
+        }
+        
     }
 
     useEffect(() => {
@@ -62,7 +70,7 @@ export default function NextTask() {
     }, []);
 
     if(taskDetails == null){
-        return <div>Please come back later for more tasks:))</div>
+        return <div className="flex justify-center my-auto text-xl">Please come back later for more tasks:))</div>
     }
 
     return( 
