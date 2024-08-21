@@ -21,7 +21,7 @@ export default function taskFunction() {
     async function fetchDetails() {
         const response = await axios.get(`${BACKEND_URL}/v1/user/task?taskId=${taskId}`, {
             headers: {
-                Authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTcyNDExOTg3NH0.g0H_URzXL6MNid7eceNQsefCxleYcqzqqMnOi7D9J8E"
+                Authorization: localStorage.getItem("token"),
             }
         });
         console.log(response);
